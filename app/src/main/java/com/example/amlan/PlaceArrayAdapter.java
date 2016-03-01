@@ -68,7 +68,6 @@ public class PlaceArrayAdapter
                     Places.GeoDataApi
                             .getAutocompletePredictions(mGoogleApiClient, constraint.toString(),
                                     mBounds, mPlaceFilter);
-            // Wait for predictions, set git remote add origin https://github.com/AmlanDwivedy/PlacesAutocompleteDialog.git timeout.
             AutocompletePredictionBuffer autocompletePredictions = results
                     .await(60, TimeUnit.SECONDS);
             final Status status = autocompletePredictions.getStatus();

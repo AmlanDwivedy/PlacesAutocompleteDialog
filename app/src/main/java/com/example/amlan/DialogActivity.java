@@ -1,13 +1,13 @@
 package com.example.amlan;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.Dialog;
 import android.os.Bundle;
-import android.text.Html;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
-import android.widget.TextView;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -20,46 +20,68 @@ import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 
-public class MainActivity extends AppCompatActivity implements
+/**
+ * Created by amlan on 1/3/16.
+ */
+public class DialogActivity extends AppCompatActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks {
 
-    private static final String LOG_TAG = MainActivity.class.getName();
-    private AutoCompleteTextView mAutocompleteTextView;
+
+    private static final String LOG_TAG = DialogActivity.class.getName();
     private GoogleApiClient mGoogleApiClient;
     private PlaceArrayAdapter mPlaceArrayAdapter;
-    private static final LatLngBounds BOUNDS_MOUNTAIN_VIEW = new LatLngBounds(
+    private static final LatLngBounds BOUNDS_INDIA = new LatLngBounds(
             new LatLng(23.271627, 68.466797), new LatLng(26.0000, 92.7000));
     private static final int GOOGLE_API_CLIENT_ID = 0;
-    private TextView mNameTextView;
-    private TextView mAddressTextView;
-    private TextView mIdTextView;
-    private TextView mPhoneTextView;
-    private TextView mWebTextView;
-    private TextView mAttTextView;
+    private LatLng latLng;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        mNameTextView = (TextView) findViewById(R.id.name);
-        mAddressTextView = (TextView) findViewById(R.id.address);
-        mIdTextView = (TextView) findViewById(R.id.place_id);
-        mPhoneTextView = (TextView) findViewById(R.id.phone);
-        mWebTextView = (TextView) findViewById(R.id.web);
-        mAttTextView = (TextView) findViewById(R.id.att);
-        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+
+        setContentView(R.layout.layout_test);
+
+        findViewById(R.id.click).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDialog();
+            }
+        });
+
+        mGoogleApiClient = new GoogleApiClient.Builder(DialogActivity.this)
                 .addApi(Places.GEO_DATA_API)
                 .enableAutoManage(this, GOOGLE_API_CLIENT_ID, this)
                 .addConnectionCallbacks(this)
                 .build();
-        mAutocompleteTextView = (AutoCompleteTextView) findViewById(R.id
-                .autoCompleteTextView);
-        mAutocompleteTextView.setThreshold(3);
+        mPlaceArrayAdapter = new PlaceArrayAdapter(this, android.R.layout.simple_list_item_1, BOUNDS_INDIA, null);
+    }
+
+    private void showDialog() {
+        latLng = null;
+        final Dialog dialog = new Dialog(DialogActivity.this);
+        dialog.setContentView(R.layout.layout_dialog);
+
+        AutoCompleteTextView mAutocompleteTextView = (AutoCompleteTextView) dialog.findViewById(R.id.places_autocomplete);
+        Button done = (Button) dialog.findViewById(R.id.done);
+
         mAutocompleteTextView.setOnItemClickListener(mAutocompleteClickListener);
-        mPlaceArrayAdapter = new PlaceArrayAdapter(this, android.R.layout.simple_list_item_1,
-                BOUNDS_MOUNTAIN_VIEW, null);
         mAutocompleteTextView.setAdapter(mPlaceArrayAdapter);
+
+        dialog.show();
+
+        done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (latLng != null) {
+                    Log.d(LOG_TAG, "Successfully got lat long" + latLng.toString());
+                    if (dialog != null && dialog.isShowing())
+                        dialog.dismiss();
+                }
+            }
+        });
+
     }
 
     private AdapterView.OnItemClickListener mAutocompleteClickListener = new AdapterView.OnItemClickListener() {
@@ -75,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     };
 
+
     private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback
             = new ResultCallback<PlaceBuffer>() {
         @Override
@@ -86,35 +109,13 @@ public class MainActivity extends AppCompatActivity implements
             }
             // Selecting the first object buffer.
             final Place place = places.get(0);
-            CharSequence attributions = places.getAttributions();
-            mNameTextView.setText(Html.fromHtml(place.getName() + ""));
-            mAddressTextView.setText(Html.fromHtml(place.getAddress() + ""));
-            mIdTextView.setText(Html.fromHtml(place.getId() + ""));
-            mPhoneTextView.setText(Html.fromHtml(place.getPhoneNumber() + ""));
-            mWebTextView.setText(place.getWebsiteUri() + "");
-            LatLng latLng = place.getLatLng();
+
+            latLng = place.getLatLng();
             if (latLng != null) {
                 Log.w(LOG_TAG, "lat = " + latLng.latitude);
                 Log.w(LOG_TAG, "long = " + latLng.longitude);
             }
-            if (attributions != null) {
-                mAttTextView.setText(Html.fromHtml(attributions.toString()));
-            }
-/*
-            Places.GeoDataApi.getPlaceById(mGoogleApiClient, place.getId())
-                    .setResultCallback(new ResultCallback<PlaceBuffer>() {
-                        @Override
-                        public void onResult(PlaceBuffer places) {
-                            if (places.getStatus().isSuccess()) {
-                                final Place myPlace = places.get(0);
-                                LatLng queried_location = myPlace.getLatLng();
-                                Log.e("Latitude is", "" + queried_location.latitude);
-                                Log.e("Longitude is", "" + queried_location.longitude);
-                            }
-                            places.release();
-                        }
-                    });
-*/
+
         }
     };
 
